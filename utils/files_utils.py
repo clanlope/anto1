@@ -1,5 +1,6 @@
 from pathlib import Path
 import inspect
+import re
 
 
 def current_dir() -> Path:
@@ -7,9 +8,9 @@ def current_dir() -> Path:
     return Path(inspect.stack()[-1].filename).resolve().parent
 
 
-def ensure_dir(path: Path) -> Path:
+def ensure_dir(path: Path) -> None:
     """Ensure directory exists. Create it if missing."""
-    return Path(path).mkdir(parents=True, exist_ok=True)
+    Path(path).mkdir(parents=True, exist_ok=True)
 
 
 def list_files(suffix: str = "", directory: Path = None) -> list[Path] | list[None]:
@@ -21,6 +22,16 @@ def list_files(suffix: str = "", directory: Path = None) -> list[Path] | list[No
         for _ in directory.iterdir()
         if _.is_file() and (suffix == "" or _.suffix == suffix)
     ]
+
+
+def get_prefix(file: Path) -> str:
+    """Gets the prefix of a file (part before '@')."""
+    return file.stem.split("@", 1)[0]
+
+
+def match_prefix(file1: Path, file2: Path) -> bool:
+    """Checks if two files have the same prefix."""
+    return get_prefix(file1) == get_prefix(file2)
 
 
 def select_file(list: list[Path]) -> Path | None:
