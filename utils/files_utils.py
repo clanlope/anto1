@@ -1,6 +1,5 @@
 from pathlib import Path
 import inspect
-import re
 
 
 def current_dir() -> Path:
@@ -26,6 +25,8 @@ def list_files(suffix: str = "", directory: Path = None) -> list[Path] | list[No
 
 def get_prefix(file: Path) -> str:
     """Gets the prefix of a file (part before '@')."""
+    if "@" not in file.stem:
+        raise ValueError(f"No '@' in filename: {file.name}")
     return file.stem.split("@", 1)[0]
 
 
