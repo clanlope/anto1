@@ -8,7 +8,14 @@ def request_web(
 
     headers_file = "auth_header"
 
-    def _authorize(rc: any):
+    def _local_autherize():
+        if os.path.exists(headers_file):
+            with open(headers_file, "r") as f:
+                return json.load(f)
+        else:
+            return None
+    
+    def _authorize(rc: any):  #pw
         username, password = user_info if user_info else ("", "")
 
         def _capture_route(route):
@@ -17,12 +24,20 @@ def request_web(
                     if "authorization" in key.lower():
                         with open(headers_file, "w") as f:
                             json.dump(route.request.headers, f)
-                        rc.header_overrides = route.request.headers
+                        rc.header_overrides = route.request.headers    # no use
                         break
             route.continue_()
 
         # change to the login page of the target website
         rc.route("**/*", _capture_route)
+
+        with pw.chromium.launch(channel="chrome", headless=False) as browser:
+            context = browser.new_context()
+            page = context.new_page()
+            page.goto()
+            context.route("**/*, _capture_route)
+            page.goto()
+            page.unroute("**/*")
 
     def _request_once() -> any:
         def _verify_response(res: any) -> str:
@@ -45,14 +60,9 @@ def request_web(
 
     with sync_playwright() as p:
         rc = p.request.new_context(ignore_https_errors=True, timeout=60_000)
-
-        if os.path.exists(headers_file):
-            with open(headers_file, "r") as f:
-                rc.header_overrides = json.load(f)
-        else:
-            _authorize(rc)
         try:
             while True:
+                header = _local_autherize()
                 try:
                     return _request_once()
                 except PermissionError:
@@ -60,5 +70,6 @@ def request_web(
         finally:
             rc.dispose()
 
+#data = [i for d in request_web(url, mp, user_info) for i in d["result"]["results"]]
 
 
